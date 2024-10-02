@@ -140,3 +140,162 @@ html, body {
     opacity: 1;
     transition: opacity 1s ease-in-out;
 }
+
+  /* Estilos para el popup */
+    #popup {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+    }
+    #popup-content {
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+    }
+    input {
+        display: block;
+        margin: 10px auto;
+        padding: 5px;
+    }
+
+.button-24 {
+  background: #ffa14c;
+  border: 1px solid #ffa14c;
+  border-radius: 6px;
+  box-shadow: rgba(0, 0, 0, 0.1) 1px 2px 4px;
+  box-sizing: border-box;
+  color: #FFFFFF;
+  cursor: pointer;
+  display: inline-block;
+  font-family: nunito,roboto,proxima-nova,"proxima nova",sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 16px;
+  min-height: 40px;
+  outline: 0;
+  padding: 12px 14px;
+  text-align: center;
+  text-rendering: geometricprecision;
+  text-transform: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  vertical-align: middle;
+}
+
+.button-24:hover,
+.button-24:active {
+  background-color: initial;
+  background-position: 0 0;
+  color: #ffa14c;
+}
+
+.button-24:active {
+  opacity: .5;
+}
+
+
+:root {
+    --input-color: #52524f;
+    --input-border: #ede7cd;
+    --input-background: #fff;
+    --input-placeholder: #a8a598;
+    --input-border-focus: #ffb109;
+    --group-color: var(--input-color);
+    --group-border: var(--input-border);
+    --group-background: #fffaee;
+    --group-color-focus: #fff;
+    --group-border-focus: var(--input-border-focus);
+    --group-background-focus: #ff811f;
+}
+ .form-field {
+	 display: block;
+	 width: 100%;
+	 padding: 8px 16px;
+	 line-height: 25px;
+	 font-size: 14px;
+	 font-weight: 500;
+	 font-family: inherit;
+	 border-radius: 6px;
+	 -webkit-appearance: none;
+	 color: var(--input-color);
+	 border: 1px solid var(--input-border);
+	 background: var(--input-background);
+	 transition: border 0.3s ease;
+}
+ .form-field::placeholder {
+	 color: var(--input-placeholder);
+}
+ .form-field:focus {
+	 outline: none;
+	 border-color: var(--input-border-focus);
+}
+ .form-group {
+	 position: relative;
+	 display: flex;
+	 width: 100%;
+}
+ .form-group > span, .form-group .form-field {
+	 white-space: nowrap;
+	 display: block;
+}
+ .form-group > span:not(:first-child):not(:last-child), .form-group .form-field:not(:first-child):not(:last-child) {
+	 border-radius: 0;
+}
+ .form-group > span:first-child, .form-group .form-field:first-child {
+	 border-radius: 6px 0 0 6px;
+}
+ .form-group > span:last-child, .form-group .form-field:last-child {
+	 border-radius: 0 6px 6px 0;
+}
+ .form-group > span:not(:first-child), .form-group .form-field:not(:first-child) {
+	 margin-left: -1px;
+}
+ .form-group .form-field {
+	 position: relative;
+	 z-index: 1;
+	 flex: 1 1 auto;
+	 width: 1%;
+	 margin-top: 0;
+	 margin-bottom: 0;
+}
+ .form-group > span {
+	 text-align: center;
+	 padding: 8px 12px;
+	 font-size: 14px;
+	 line-height: 25px;
+	 color: var(--group-color);
+	 background: var(--group-background);
+	 border: 1px solid var(--group-border);
+	 transition: background 0.3s ease, border 0.3s ease, color 0.3s ease;
+}
+ .form-group:focus-within > span {
+	 color: var(--group-color-focus);
+	 background: var(--group-background-focus);
+	 border-color: var(--group-border-focus);
+}
+ html {
+	 box-sizing: border-box;
+	 -webkit-font-smoothing: antialiased;
+}
+ * {
+	 box-sizing: inherit;
+}
+ *:before, *:after {
+	 box-sizing: inherit;
+}
+
+ body .form-group {
+	 max-width: 360px;
+}
+ body .form-group:not(:last-child) {
+	 margin-bottom: 8px;
+}
+ 

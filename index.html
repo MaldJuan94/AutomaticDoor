@@ -19,9 +19,32 @@
     <script type='text/javascript' src="js/main.js"></script>
 </head>
 <body>
+
+
     <div class="content">
         <h1 id="fadeText" class="message hidden">.</h1>
         <button id="opendoor" class="bubbly-button" disabled>Open the door</button>
     </div>
+
+    <div id="popup">
+        <div id="popup-content">
+            <h2>Set credentials</h2>
+
+            <div class="form-group">
+                <input  id="user" class="form-field" type="text" placeholder="Email">
+            </div>
+
+            <div class="form-group">
+                <input id="password" class="form-field" type="password" placeholder="Password">
+            </div>
+
+            <div class="form-group">
+                <input id="key" class="form-field" type="text" placeholder="Key">
+            </div>
+
+            <button class="button-24" role="button" id="saveBtn">Save</button>
+        </div>
+    </div>
 </body>
 </html>
+

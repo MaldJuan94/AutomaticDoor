@@ -1,7 +1,7 @@
 // Register Service Worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-
+    checkStorage();
      signIn();
         navigator.serviceWorker.register('./pwa-sw.js')
             .then(function (register) {
@@ -43,11 +43,11 @@ if ('serviceWorker' in navigator) {
         }
 
         async function signIn() {
-            const url = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBVfS68bzD0AREp8yUarOxFPcvev19LDu4';
+            const url = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+localStorage.getItem('key');;
 
             const requestBody = {
-                email: "juanescorcia94@live.com",
-                password: "mLemou12.",
+                email: localStorage.getItem('user'),
+                password: localStorage.getItem('password'),
                 returnSecureToken: true
             };
 
@@ -143,6 +143,50 @@ if ('serviceWorker' in navigator) {
                         console.log('Botón "opendoor" habilitado');
                     }
         }
+
+
+              // Función para mostrar el popup
+                function showPopup() {
+                    document.getElementById('popup').style.display = 'flex';
+                }
+
+                // Función para ocultar el popup
+                function hidePopup() {
+                    document.getElementById('popup').style.display = 'none';
+                }
+
+                // Comprobar si los datos ya están guardados en el localStorage
+                function checkStorage() {
+                    const user = localStorage.getItem('user');
+                    const password = localStorage.getItem('password');
+                    const key = localStorage.getItem('key');
+
+                    // Si no están almacenados, muestra el popup
+                    if (!user || !password || !key) {
+                        showPopup();
+                    }
+                }
+
+                // Guardar los datos en localStorage
+                document.getElementById('saveBtn').addEventListener('click', () => {
+                    const user = document.getElementById('user').value;
+                    const password = document.getElementById('password').value;
+                    const key = document.getElementById('key').value;
+
+                    // Validar que los campos no estén vacíos
+                    if (user && password && key) {
+                        // Guardar los datos en localStorage
+                        localStorage.setItem('user', user);
+                        localStorage.setItem('password', password);
+                        localStorage.setItem('key', key);
+
+                        // Ocultar el popup después de guardar
+                        hidePopup();
+                        signIn();
+                    } else {
+                        alert('Please complete all fields');
+                    }
+                });
 
     });
 }
