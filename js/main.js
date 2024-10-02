@@ -75,7 +75,7 @@ if ('serviceWorker' in navigator) {
 
 
         async function opendoor() {
-            const url = 'https://porterogirasol-default-rtdb.firebaseio.com/commandv2/opendoor.json?auth='+getIdToken();
+            const url = 'https://porterogirasol-default-rtdb.firebaseio.com/command/opendoor.json?auth='+getIdToken();
 
             const secondsSinceEpoch = Math.floor(Date.now() / 1000);
             const requestBody = "1000,"+secondsSinceEpoch;
