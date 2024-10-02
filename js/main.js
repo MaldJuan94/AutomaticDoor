@@ -88,6 +88,7 @@ if ('serviceWorker' in navigator) {
                 });
                 const data = await response.json();
                 if (response.ok) {
+                    vibrarDispositivo(1000);
                     showText('The door was opened');
                 } else {
                     showText('Error opening the door');
@@ -125,6 +126,14 @@ if ('serviceWorker' in navigator) {
             }, 3000); // Cambiar el tiempo según lo que necesites
         }
 
+
+        function vibrarDispositivo(duracion) {
+              if ('vibrate' in navigator) {
+                navigator.vibrate(duracion);
+              } else {
+                console.error('La API de Vibración no es compatible con este navegador.');
+              }
+          }
 
         function setStatusButton(disabled){
               // Habilitar el botón con id "opendoor"
