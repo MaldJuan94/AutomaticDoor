@@ -1,178 +1,302 @@
-# AutomaticDoor
+<div align="center">
 
-An IoT system that lets you open your building's door remotely from your phone. It works as an **interceptor for a 4-wire intercom system**, where 2 of the wires control the door lock (signal + ground). A PWA web app communicates with an ESP32 microcontroller through Firebase Realtime Database to trigger a relay that opens the door.
+# 🚪 AutomaticDoor
 
-## How It Works
+**Open your building's door from anywhere with a tap on your phone**
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![ESP32](https://img.shields.io/badge/ESP32-Arduino-blue?logo=espressif)
+![Firebase](https://img.shields.io/badge/Firebase-RTDB-orange?logo=firebase)
+![PWA](https://img.shields.io/badge/PWA-Installable-blueviolet?logo=pwa)
+
+---
+
+An IoT system that acts as an **interceptor for a 4-wire intercom**, where 2 of the wires control the door lock (signal + ground). A **PWA web app** communicates with an **ESP32** microcontroller through **Firebase Realtime Database** to trigger a relay that opens the door.
+
+</div>
+
+---
+
+## 🧠 How It Works
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant 📱 PWA
+    participant 🔥 Firebase RTDB
+    participant 🤖 ESP32
+    participant 🚪 Door Lock
+
+    User->>📱 PWA: Taps "Open the door"
+    📱 PWA->>🔥 Firebase RTDB: PUT /command/opendoor<br/>"1000,timestamp"
+    🔥 Firebase RTDB-->>🤖 ESP32: Stream event detected
+    🤖 ESP32->>🚪 Door Lock: GPIO 15 LOW → Relay ON (1s)
+    🤖 ESP32->>🚪 Door Lock: GPIO 15 HIGH → Relay OFF
+    📱 PWA-->>User: ✅ "The door was opened" + vibration
 ```
-┌──────────────┐         ┌──────────────────┐         ┌──────────────┐
-│   PWA App    │  HTTPS  │  Firebase RTDB   │  Stream  │    ESP32     │
-│  (Browser)   │────────>│  /command/       │────────>│  + Relay     │
-│              │   PUT   │  opendoor        │         │              │
-└──────────────┘         └──────────────────┘         └──────┬───────┘
-                                                             │
-                                                             │ GPIO 15
-                                                             ▼
-                                                      ┌──────────────┐
-                                                      │  Door Lock   │
-                                                      │  (Intercom)  │
-                                                      └──────────────┘
+
+> 1️⃣ The user taps **"Open the door"** on the PWA.
+> 
+> 2️⃣ The PWA authenticates with Firebase and sends a `PUT` to `/command/opendoor`.
+> 
+> 3️⃣ The ESP32 detects the change via a persistent stream and activates the relay on GPIO 15 for ~1 second.
+> 
+> 4️⃣ The relay closes the intercom circuit (signal + ground), unlocking the door.
+
+---
+
+## 🏗️ Architecture
+
+```mermaid
+graph LR
+    subgraph "☁️ Cloud"
+        FB[(🔥 Firebase RTDB)]
+        AUTH[🔐 Firebase Auth]
+    end
+
+    subgraph "📱 Client"
+        PWA[🌐 PWA App]
+    end
+
+    subgraph "🏠 Building"
+        ESP[🤖 ESP32]
+        RELAY[⚡ Relay 10A]
+        DOOR[🚪 Intercom / Door Lock]
+        PSU[🔌 110V → 5V Regulator]
+    end
+
+    PWA -->|HTTPS PUT| FB
+    PWA -->|Sign In| AUTH
+    FB -->|Stream| ESP
+    ESP -->|GPIO 15| RELAY
+    RELAY -->|NO / COM| DOOR
+    PSU -->|VIN + GND| ESP
+
+    style FB fill:#ff9800,stroke:#e65100,color:#fff
+    style AUTH fill:#ff9800,stroke:#e65100,color:#fff
+    style PWA fill:#7c4dff,stroke:#4a148c,color:#fff
+    style ESP fill:#2196f3,stroke:#0d47a1,color:#fff
+    style RELAY fill:#f44336,stroke:#b71c1c,color:#fff
+    style DOOR fill:#4caf50,stroke:#1b5e20,color:#fff
+    style PSU fill:#607d8b,stroke:#263238,color:#fff
 ```
 
-1. The user taps **"Open the door"** on the PWA.
-2. The PWA authenticates with Firebase and sends a command (`PUT`) to Firebase Realtime Database at `/command/opendoor`.
-3. The ESP32 listens to Firebase via a persistent stream. When it detects a change, it activates the relay on GPIO 15 for ~1 second.
-4. The relay closes the circuit between the two intercom wires (signal and ground), unlocking the door.
+---
 
-## Hardware
+## 🔧 Hardware
 
 | Component | Description |
-|---|---|
-| **ESP32** (WiFi + Bluetooth) | Microcontroller that connects to Firebase and controls the relay |
-| **10A Relay module** | Switches the intercom door-open circuit |
-| **Mini voltage regulator** (110V AC → 5V DC) | Powers the ESP32 from the building's electrical supply |
-| **4-wire intercom** | Building intercom where 2 wires control the door lock |
+|:---:|---|
+| 🤖 **ESP32** (WiFi + BT) | Microcontroller — connects to Firebase and controls the relay |
+| ⚡ **Relay module 10A** | Switches the intercom door-open circuit |
+| 🔌 **Mini voltage regulator** | Converts 110V AC → 5V DC to power the ESP32 |
+| 🏢 **4-wire intercom** | Building intercom — 2 wires control the door lock |
 
-### Wiring
+### ⚡ Wiring Diagram
 
+```mermaid
+graph TD
+    subgraph "🔌 Power Supply"
+        AC["🏠 110V AC"] --> REG["⚡ Voltage Regulator<br/>110V AC → 5V DC"]
+        REG -->|VIN| ESP_VIN["🤖 ESP32 VIN"]
+        REG -->|GND| ESP_GND["🤖 ESP32 GND"]
+    end
+
+    subgraph "🤖 ESP32 → ⚡ Relay"
+        D15["ESP32 D15"] -->|Signal| IN2["Relay IN2"]
+        V33["ESP32 3V3"] -->|Power| RVCC["Relay VCC"]
+        EGND["ESP32 GND"] -->|Ground| RGND["Relay GND"]
+    end
+
+    subgraph "⚡ Relay → 🚪 Intercom"
+        RNO["Relay NO"] -->|Signal wire| INTER_S["🔔 Intercom Signal"]
+        RCOM["Relay COM"] -->|Ground wire| INTER_G["🔔 Intercom Ground"]
+    end
+
+    style AC fill:#ff5722,stroke:#bf360c,color:#fff
+    style REG fill:#607d8b,stroke:#263238,color:#fff
+    style D15 fill:#2196f3,stroke:#0d47a1,color:#fff
+    style V33 fill:#2196f3,stroke:#0d47a1,color:#fff
+    style EGND fill:#2196f3,stroke:#0d47a1,color:#fff
+    style IN2 fill:#f44336,stroke:#b71c1c,color:#fff
+    style RVCC fill:#f44336,stroke:#b71c1c,color:#fff
+    style RGND fill:#f44336,stroke:#b71c1c,color:#fff
+    style RNO fill:#f44336,stroke:#b71c1c,color:#fff
+    style RCOM fill:#f44336,stroke:#b71c1c,color:#fff
+    style INTER_S fill:#4caf50,stroke:#1b5e20,color:#fff
+    style INTER_G fill:#4caf50,stroke:#1b5e20,color:#fff
 ```
-  ┌─────────────────────────────────────────────────────────┐
-  │                    POWER SUPPLY                         │
-  │                                                         │
-  │  110V AC ──► [Voltage Regulator 110V→5V] ──┬── VIN ESP32│ 
-  │                                            └── GND ESP32│
-  └─────────────────────────────────────────────────────────┘
 
-  ┌─────────────────────────────────────────────────────────┐
-  │                  ESP32 ──► RELAY                        │
-  │                                                         │
-  │  ESP32 D15  ──► Relay IN2                               │
-  │  ESP32 3V3  ──► Relay VCC                               │
-  │  ESP32 GND  ──► Relay GND                               │
-  └─────────────────────────────────────────────────────────┘
-
-  ┌─────────────────────────────────────────────────────────┐
-  │               RELAY ──► INTERCOM                        │
-  │                                                         │
-  │  Relay NO   ──► Intercom wire (signal)                  │
-  │  Relay COM  ──► Intercom wire (ground)                  │
-  └─────────────────────────────────────────────────────────┘
-```
-
-> **Power**: The mini voltage regulator converts 110V AC to 5V DC and feeds the ESP32 through the **VIN** and **GND** pins.
+> 🔌 **Power** — The mini voltage regulator converts 110V AC to 5V DC and feeds the ESP32 through **VIN** and **GND**.
 >
-> **Relay**: Powered at **3.3V** from the ESP32's 3V3 pin. The control signal comes from **GPIO 15 (D15)** via the relay's **IN2** port.
+> ⚡ **Relay** — Powered at **3.3V** from the ESP32's 3V3 pin. Control signal from **GPIO 15 (D15)** via relay **IN2**.
 >
-> **Door**: The relay is configured as **normally open (NO)**: when the ESP32 drives GPIO 15 LOW, the relay closes the circuit between the two intercom wires (signal + ground), unlocking the door.
+> 🚪 **Door** — Relay configured as **normally open (NO)**: GPIO 15 goes LOW → relay closes → intercom circuit completes → door unlocks.
 
-## Software
+---
 
-### ESP32 Firmware (`esp32.ino`)
+## 💻 Software
 
-- **WiFi**: connects to a stored network (credentials saved in NVS flash via `Preferences`).
-- **Bluetooth**: exposes a serial interface (`DOOR_BT`) to configure WiFi credentials from a phone. Send `SSID,password` via Bluetooth to update.
-- **Firebase**: authenticates with email/password and listens on `/command` for changes via a persistent stream.
-- **Door control**: parses the command `"time,timestamp"` and activates the relay for `time` milliseconds.
-- **Watchdog**: automatically restarts every 6 hours to maintain stability.
-- **Auto-reconnect**: handles WiFi drops, Firebase disconnections, and stream timeouts with exponential backoff.
-- **FCM notifications**: sends a push notification when WiFi reconnects successfully.
+### 🤖 ESP32 Firmware — `esp32.ino`
 
-### PWA Web App
+| Feature | Description |
+|:---:|---|
+| 📶 **WiFi** | Connects to a stored network (credentials saved in NVS flash via `Preferences`) |
+| 🔵 **Bluetooth** | Serial interface `DOOR_BT` to configure WiFi credentials. Send `SSID,password` |
+| 🔥 **Firebase** | Authenticates with email/password and listens on `/command` via persistent stream |
+| 🚪 **Door control** | Parses `"time,timestamp"` and activates relay for `time` ms |
+| ⏰ **Watchdog** | Auto-restarts every 6 hours for stability |
+| 🔄 **Auto-reconnect** | Handles WiFi drops, Firebase disconnections with exponential backoff |
+| 📨 **FCM** | Sends push notification when WiFi reconnects |
 
-- **Vanilla HTML/CSS/JS** — no build tools or frameworks needed.
-- **Service Worker** with offline caching support.
-- **Installable** on mobile devices as a home-screen app (fullscreen mode).
-- **First-run setup**: prompts for Firebase email, password, and API key (stored in `localStorage`).
-- **Authentication**: signs in via Firebase Auth REST API.
-- **Door command**: sends `"1000,{timestamp}"` to Firebase RTDB, triggering the ESP32.
-- **Haptic feedback**: vibrates the device on successful door open.
+### 🌐 PWA Web App
 
-## Project Structure
+| Feature | Description |
+|:---:|---|
+| 🧱 **Vanilla stack** | HTML / CSS / JS — no build tools or frameworks |
+| 📦 **Service Worker** | Offline caching support |
+| 📲 **Installable** | Add to home screen, runs in fullscreen mode |
+| 🔐 **Auth** | First-run popup for Firebase email, password & API key (stored in `localStorage`) |
+| 🔓 **Door command** | Sends `"1000,{timestamp}"` to Firebase RTDB |
+| 📳 **Haptic feedback** | Vibrates the device on successful door open |
+
+---
+
+## 📁 Project Structure
 
 ```
-AutomaticDoor/
-├── esp32.ino            # ESP32 Arduino firmware
-├── index.html           # Main PWA page
-├── offline.html         # Offline fallback
-├── private.html         # Private page placeholder
-├── pwa-manifest.json    # PWA manifest
-├── pwa-sw.js            # Service worker
-├── css/
-│   └── style.css        # Styles
-├── js/
-│   └── main.js          # PWA logic (auth, door control)
-├── img/                 # Icons (iOS, Android, Windows)
-└── LICENSE              # MIT License
+📦 AutomaticDoor/
+├── 🤖 esp32.ino            # ESP32 Arduino firmware
+├── 🌐 index.html           # Main PWA page
+├── 📴 offline.html         # Offline fallback
+├── 🔒 private.html         # Private page placeholder
+├── 📋 pwa-manifest.json    # PWA manifest
+├── ⚙️ pwa-sw.js            # Service worker
+├── 🎨 css/
+│   └── style.css           # Styles
+├── 📜 js/
+│   └── main.js             # PWA logic (auth + door control)
+├── 🖼️ img/                 # Icons (iOS, Android, Windows)
+└── 📄 LICENSE              # MIT License
 ```
 
-## Setup
+---
 
-### Prerequisites
+## 🚀 Setup
 
-- [Arduino IDE](https://www.arduino.cc/en/software) with ESP32 board support
-- A [Firebase](https://firebase.google.com/) project with:
+### 📋 Prerequisites
+
+- 🛠️ [Arduino IDE](https://www.arduino.cc/en/software) with ESP32 board support
+- 🔥 A [Firebase](https://firebase.google.com/) project with:
   - **Realtime Database** enabled
   - **Authentication** (email/password) enabled
   - A registered user account
-  - A **service account** with a private key
-- A web server or hosting service (e.g. Firebase Hosting, GitHub Pages) to serve the PWA
+  - A **service account** with private key
+- 🌍 A web server or hosting (e.g. Firebase Hosting, GitHub Pages) to serve the PWA
 
-### 1. Firebase Configuration
+---
 
-1. Create a Firebase project.
-2. Enable **Realtime Database** and set up security rules to allow authenticated writes to `/command`.
-3. Enable **Email/Password authentication** and create a user.
-4. Generate a **service account private key** from Project Settings > Service Accounts.
+### 1️⃣ Firebase Configuration
 
-### 2. ESP32 Firmware
+```mermaid
+graph LR
+    A["🔥 Create Firebase Project"] --> B["🗄️ Enable Realtime Database"]
+    B --> C["🔐 Enable Email/Password Auth"]
+    C --> D["👤 Create User Account"]
+    D --> E["🔑 Generate Service Account Key"]
 
-1. Open `esp32.ino` in Arduino IDE.
+    style A fill:#ff9800,stroke:#e65100,color:#fff
+    style B fill:#ff9800,stroke:#e65100,color:#fff
+    style C fill:#ff9800,stroke:#e65100,color:#fff
+    style D fill:#ff9800,stroke:#e65100,color:#fff
+    style E fill:#ff9800,stroke:#e65100,color:#fff
+```
+
+1. Create a Firebase project
+2. Enable **Realtime Database** and set up security rules for authenticated writes to `/command`
+3. Enable **Email/Password authentication** and create a user
+4. Generate a **service account private key** from Project Settings → Service Accounts
+
+---
+
+### 2️⃣ ESP32 Firmware
+
+1. Open `esp32.ino` in Arduino IDE
 2. Install the required libraries:
-   - `FirebaseESP32` by mobizt
-   - `Preferences` (built-in)
-   - `BluetoothSerial` (built-in)
-3. Update the following constants with your Firebase project details:
+
+   | Library | Source |
+   |---|---|
+   | `FirebaseESP32` | by mobizt |
+   | `Preferences` | built-in |
+   | `BluetoothSerial` | built-in |
+
+3. Update the constants with your Firebase project details:
+
    ```cpp
    #define API_KEY "your-firebase-api-key"
    #define DATABASE_URL "your-project.firebaseio.com"
    #define USER_EMAIL "your-email@example.com"
    #define USER_PASSWORD "your-password"
    #define FIREBASE_PROJECT_ID "your-project-id"
-   #define FIREBASE_CLIENT_EMAIL "your-service-account@your-project.iam.gserviceaccount.com"
+   #define FIREBASE_CLIENT_EMAIL "your-sa@your-project.iam.gserviceaccount.com"
    // Update PRIVATE_KEY with your service account's private key
    ```
-4. Select **ESP32 Dev Module** as the board and upload.
 
-### 3. WiFi Configuration via Bluetooth
+4. Select **ESP32 Dev Module** as the board and upload
+
+---
+
+### 3️⃣ WiFi Configuration via Bluetooth
 
 After flashing, the ESP32 starts with default WiFi credentials. To update:
 
-1. Pair your phone with the Bluetooth device **`DOOR_BT`**.
-2. Send your WiFi credentials in the format: `SSID,password`
-3. The ESP32 will save the credentials to flash and reconnect.
+1. 📱 Pair your phone with Bluetooth device **`DOOR_BT`**
+2. 📤 Send credentials in format: `SSID,password`
+3. ✅ The ESP32 saves to flash and reconnects automatically
 
-The onboard LED blinks to indicate status:
-- **2 blinks**: WiFi connected successfully
-- **3 blinks**: WiFi connection failed
-- **4 blinks**: Restarting (watchdog)
+**💡 LED Status Indicators:**
 
-### 4. PWA Deployment
+| Blinks | Meaning |
+|:---:|---|
+| 💚💚 | WiFi connected successfully |
+| 🔴🔴🔴 | WiFi connection failed |
+| 🟡🟡🟡🟡 | Restarting (watchdog) |
 
-1. Host the project files on any static web server (the PWA requires HTTPS for service worker registration).
-2. Open the URL on your phone's browser.
-3. On first visit, enter your Firebase **email**, **password**, and **API key** in the popup.
-4. Tap **"Open the door"** to unlock.
-5. Add the app to your home screen for quick access.
+---
 
-## Security Considerations
+### 4️⃣ PWA Deployment
 
-> **Important**: The current code contains hardcoded credentials and keys. Before deploying to production:
+1. 🌍 Host the project files on any static web server (HTTPS required for service workers)
+2. 📱 Open the URL on your phone's browser
+3. 🔐 Enter your Firebase **email**, **password**, and **API key** on first visit
+4. 👆 Tap **"Open the door"** to unlock
+5. 📲 Add to home screen for quick access
 
-- Replace all hardcoded Firebase credentials in `esp32.ino` with your own.
-- Never commit real credentials to a public repository. Use environment variables or a config file excluded via `.gitignore`.
-- Set restrictive Firebase Realtime Database security rules to only allow authenticated users.
-- Consider implementing token refresh in the PWA for long-lived sessions.
+---
 
-## License
+## 🔒 Security Considerations
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+> ⚠️ **Important**: The current code contains hardcoded credentials. Before deploying to production:
+
+| Risk | Recommendation |
+|:---:|---|
+| 🔑 Hardcoded keys | Replace all Firebase credentials in `esp32.ino` with your own |
+| 📂 Public repo | Never commit real credentials — use `.gitignore` for config files |
+| 🛡️ DB rules | Set restrictive Firebase RTDB rules — only allow authenticated users |
+| 🔄 Token expiry | Implement token refresh in the PWA for long-lived sessions |
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
+
+---
+
+<div align="center">
+
+Made with ❤️ by **Juan Escorcia**
+
+🤖 ESP32 · 🔥 Firebase · 🌐 PWA
+
+</div>
